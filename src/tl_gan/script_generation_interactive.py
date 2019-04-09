@@ -109,13 +109,13 @@ class GuiCallback(object):
             self.feature_direction, idx_base=np.flatnonzero(self.feature_lock_status))
         img_cur = gen_image(self.latents)
         h_img.set_data(img_cur)
-        plt.draw()
+        #plt.draw()
 
     def random_gen(self, event):
         self.latents = np.random.randn(1, *Gs.input_shapes[0][1:])
         img_cur = gen_image(self.latents)
         h_img.set_data(img_cur)
-        plt.draw()
+        #plt.draw()
 
     def modify_along_feature(self, event, idx_feature, step_size=0.05):
         self.latents += self.feature_directoion_disentangled[:, idx_feature] * step_size
@@ -132,10 +132,25 @@ class GuiCallback(object):
 
 callback = GuiCallback()
 
-ax_randgen = plt.axes([0.55, 0.90, 0.15, 0.05])
-b_randgen = widgets.Button(ax_randgen, 'Random Generate')
-b_randgen.on_clicked(callback.random_gen)
+""" Function to accept text input:  """
+def get_user_input():
+    while(True):
+        feature = input("Which feature would you like to modify? ")
+        direction = input("Press M to increase this quality, or L to decrease it: ")
 
+        if direction == 'M':
+            lambda event: callback.modify_along_feature(event, feature, step_size=1*step_size)
+        elif direction == 'L':
+            lambda event: callback.modify_along_feature(event, feature, step_size=-1*step_size)
+        else:
+            print("Please only input M or L. Press CTRL+C to exit the program.")
+
+get_user_input()
+
+#ax_randgen = plt.axes([0.55, 0.90, 0.15, 0.05])
+#b_randgen = widgets.Button(ax_randgen, 'Random Generate')
+#b_randgen.on_clicked(callback.random_gen)
+'''
 def get_loc_control(idx_feature, nrows=8, ncols=5,
                     xywh_range=(0.51, 0.05, 0.48, 0.8)):
     r = idx_feature // ncols
@@ -173,9 +188,9 @@ list_buttons = []
 for idx_feature in range(num_feature):
     list_buttons.append(create_button(idx_feature))
 
-plt.show()
+#plt.show()
 
-
+'''
 
 
 ##

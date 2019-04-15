@@ -109,6 +109,7 @@ class GuiCallback(object):
             self.feature_direction, idx_base=np.flatnonzero(self.feature_lock_status))
         img_cur = gen_image(self.latents)
         h_img.set_data(img_cur)
+
         #plt.draw()
 
     def random_gen(self, event):
@@ -121,7 +122,10 @@ class GuiCallback(object):
         self.latents += self.feature_directoion_disentangled[:, idx_feature] * step_size
         img_cur = gen_image(self.latents)
         h_img.set_data(img_cur)
+        print("h_img: ", h_img)
+        print("img_cur: ", img_cur)
         plt.draw()
+        print("Saving picture to: " + path_gan_explore_interactive)
         plt.savefig(os.path.join(path_gan_explore_interactive,
                                  '{}_{}_{}.png'.format(gen_time_str(), feature_name[idx_feature], ('pos' if step_size>0 else 'neg'))))
 
@@ -132,16 +136,32 @@ class GuiCallback(object):
 
 callback = GuiCallback()
 
+def get_feature_index(feature):
+    for i in range(len(feature_name)):
+        if feature_name[i] == feature:
+            return i
+    print("Error: Feature provided does not exist. Please Try again.")
+    return -1
+
 """ Function to accept text input:  """
 def get_user_input():
+    step_size = 0.4
     while(True):
         feature = input("Which feature would you like to modify? ")
         direction = input("Press M to increase this quality, or L to decrease it: ")
 
         if direction == 'M':
-            lambda event: callback.modify_along_feature(event, feature, step_size=1*step_size)
+            idx = get_feature_index(feature)
+            if idx == -1:
+                get_user_input()
+
+            print("Moving along " + feature + " vector in positive direction.")
+            event = "event"
+            callback.modify_along_feature(event, idx, step_size=1*step_size)
         elif direction == 'L':
-            lambda event: callback.modify_along_feature(event, feature, step_size=-1*step_size)
+            print("Moving along " + feature + " vector in negative direction.")
+            event = "event"
+            callback.modify_along_feature(event, feature, step_size=-1*step_size)
         else:
             print("Please only input M or L. Press CTRL+C to exit the program.")
 
@@ -150,6 +170,7 @@ get_user_input()
 #ax_randgen = plt.axes([0.55, 0.90, 0.15, 0.05])
 #b_randgen = widgets.Button(ax_randgen, 'Random Generate')
 #b_randgen.on_clicked(callback.random_gen)
+
 '''
 def get_loc_control(idx_feature, nrows=8, ncols=5,
                     xywh_range=(0.51, 0.05, 0.48, 0.8)):
@@ -162,7 +183,7 @@ def get_loc_control(idx_feature, nrows=8, ncols=5,
 step_size = 0.4
 
 def create_button(idx_feature):
-    """ function to built button groups for one feature """
+    # function to built button groups for one feature
     x, y, w, h = get_loc_control(idx_feature)
 
     plt.text(x+w/2, y+h/2+0.01, feature_name[idx_feature], horizontalalignment='center',

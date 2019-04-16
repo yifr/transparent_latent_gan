@@ -12,7 +12,7 @@ def find_feature_axis(z, y, method='linear', **kwargs_model):
     :param z: vectors in the latent space, shape=(num_samples, num_latent_vector_dimension)
     :param y: feature vectors, shape=(num_samples, num_features)
     :param method: one of ['linear', 'logistic'], or a sklearn.linear_model object, (eg. sklearn.linear_model.ElasticNet)
-    :param kwargs_model: parameters specific to a sklearn.linear_model object, (eg., penalty = 'l2'    
+    :param kwargs_model: parameters specific to a sklearn.linear_model object, (eg., penalty = 'l2'
 :return: feature vectors, shape = (num_latent_vector_dimension, num_features)
     """
 
@@ -122,6 +122,7 @@ def disentangle_feature_axis_by_idx(feature_axis, idx_base=None, idx_target=None
         feature_axis_out = normalize_feature_axis(feature_axis_disentangled)
     else:
         feature_axis_out = feature_axis_disentangled
+
     return feature_axis_out
 
 

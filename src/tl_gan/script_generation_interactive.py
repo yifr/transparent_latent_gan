@@ -1,24 +1,26 @@
 """ generation of images interactively with ui control """
 
 import os
-import glob
+import re
+import PIL
 import sys
-import numpy as np
+import glob
 import time
 import pickle
-import tensorflow as tf
-import PIL
 import matplotlib
+import numpy as np
 matplotlib.use('TkAgg')
+import tensorflow as tf
 import matplotlib.pyplot as plt
 import matplotlib.widgets as widgets
+
 plt.ion()
 
 import src.tl_gan.feature_axis as feature_axis
 
 def gen_time_str():
     """ tool function """
-    return time.strftime("%Y%m%d_%H%M%S", time.gmtime())
+    return time.strftime("%m%d:%H%M%S", time.gmtime())
 
 
 """ location to save images """
@@ -36,6 +38,7 @@ with open(pathfile_feature_direction, 'rb') as f:
     feature_direction_name = pickle.load(f)
 
 feature_direction = feature_direction_name['direction']
+
 feature_name = feature_direction_name['name']
 num_feature = feature_direction.shape[1]
 
@@ -101,8 +104,8 @@ yn_save_fig = True
 class GuiCallback(object):
     counter = 0
     latents = latents
-    def __init__(self):
-        self.latents = np.random.randn(1, *Gs.input_shapes[0][1:])
+    def __init__(self,v):
+        self.latents =np.array([v])
         self.feature_direction = feature_direction
         self.feature_lock_status = np.zeros(num_feature).astype('bool')
         self.feature_directoion_disentangled = feature_axis.disentangle_feature_axis_by_idx(
@@ -119,6 +122,7 @@ class GuiCallback(object):
         #plt.draw()
 
     def modify_along_feature(self, event, idx_feature, step_size=0.05):
+        print("*GS.INPUT SHIT: ", *Gs.input_shapes[0][1:])
         self.latents += self.feature_directoion_disentangled[:, idx_feature] * step_size
         img_cur = gen_image(self.latents)
         h_img.set_data(img_cur)
@@ -134,7 +138,6 @@ class GuiCallback(object):
         self.feature_directoion_disentangled = feature_axis.disentangle_feature_axis_by_idx(
             self.feature_direction, idx_base=np.flatnonzero(self.feature_lock_status))
 
-callback = GuiCallback()
 
 def get_feature_index(feature):
     for i in range(len(feature_name)):
@@ -146,15 +149,44 @@ def get_feature_index(feature):
 """ Function to accept text input:  """
 def get_user_input():
     step_size = 0.4
+    init = input("Input a description of a face: ")
+    features = re.split(", | ", init)
+
+    gender = None
+    while gender == None:
+        if "Male" in features or "Man" in features:
+            gender = "Male"
+        elif "Female" in features or "Woman" in features:
+            gender = "Female"
+        else:
+            print("Please indicate either Male or Female in your initial description of a face.")
+            init = input("Input a description of a face: ")
+            features = re.split(", | ", init)
+
+    feature_lock_status = np.zeros(num_feature).astype('bool')
+    idx = get_feature_index(gender)
+    del features[features.index(gender)]
+
+    disentangled = feature_axis.disentangle_feature_axis_by_idx(
+                    feature_direction, idx_base=np.flatnonzero(feature_lock_status)
+    )
+    vector = disentangled[:, idx]
+    callback = GuiCallback(vector)
+    callback.modify_along_feature("", idx, 0)       #Saves ground truth instance of face (first face generated)
+
+    #Modify ground truth face with remaining features
+    for f in features:
+        idx = get_feature_index(f)
+        if idx == -1:
+            return
+        print("Adjusting " + f + "...")
+        callback.modify_along_feature("", idx, step_size=1*step_size)
+
     while(True):
         feature = input("Which feature would you like to modify? ")
+        idx = get_feature_index(feature)
         direction = input("Press M to increase this quality, or L to decrease it: ")
-
         if direction == 'M':
-            idx = get_feature_index(feature)
-            if idx == -1:
-                get_user_input()
-
             print("Moving along " + feature + " vector in positive direction.")
             event = "event"
             callback.modify_along_feature(event, idx, step_size=1*step_size)

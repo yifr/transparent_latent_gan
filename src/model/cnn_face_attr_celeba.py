@@ -35,10 +35,7 @@ def create_cnn_model(size_output=None, tf_print=False):
         size_output = df_attr.shape[1]
 
     # Load the convolutional layers of pretrained model: mobilenet
-    base_model = keras.applications.mobilenet.MobileNet(include_top=False, input_shape=(128,128,3),
-                                                          alpha=1, depth_multiplier=1,
-                                                          dropout=0.001, weights="imagenet",
-                                                          input_tensor=None, pooling=None)
+    base_model = keras.applications.keras.applications.resnet.ResNet50(include_top=True, weights='imagenet', input_tensor=None, input_shape=None, pooling=None, classes=1000)
 
     # add fully connected layers
     fc0 = base_model.output
